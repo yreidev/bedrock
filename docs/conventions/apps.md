@@ -57,7 +57,7 @@ apps/app/
 ### Rust 怎么进到应用里
 
 - 用 Dart 的原生构建钩子：`hook/build.dart` 交给 flutter_rust_bridge_hooks，`flutter run`、`flutter build`、`flutter test` 时自动用 rustup 编译 `crates/<项目>-ffi`，按目标平台交叉编译，产物打进应用。编译 Rust 只靠这个钩子，各平台的工程里没有相关的脚本。
-- 编译用的 Rust 版本和目标平台写在 `crates/<项目>-ffi/rust-toolchain.toml`：`channel` 和仓库根目录那份一样（升级时两份一起改），`targets` 列出要打包的平台（Linux 桌面、安卓的三种 CPU），rustup 缺什么自动装。
+- 编译用的 Rust 版本和目标平台写在 `crates/<项目>-ffi/rust-toolchain.toml`：`channel` 和仓库根目录那份一样（升级时两份一起改），`targets` 列出要打包的平台（Linux、macOS 两种 CPU、Windows 桌面，安卓的三种 CPU；iOS 要构建时再加），rustup 缺什么自动装。
 - 安卓交叉编译要安卓 SDK 里的 NDK，路径由 Flutter 传给钩子。
 - 钩子按发行版编 Rust，打调试包时也一样；每种目标平台、每种构建配置第一次构建时要把全部依赖编一遍，之后只编改了的。
 - **坑**：钩子只把少数几个环境变量（`PATH`、`HOME`、`TMPDIR` 这类）传给 cargo，`CARGO_BUILD_JOBS`、`RUSTFLAGS` 都传不进去。本机要限编译的并行数，写在 `~/.cargo/config.toml` 的 `[build] jobs`。
