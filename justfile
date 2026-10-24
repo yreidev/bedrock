@@ -163,3 +163,6 @@ check-commit-msg file:
     if printf '%s\n' "$msg" | grep -qiE '^co-authored-by:.*(claude|anthropic|openai|codex|copilot|cursor|gemini)|generated with .*(claude|codex|copilot|cursor)|🤖'; then
         fail "不带 AI 工具的署名行"
     fi
+
+# 只有 bedrock 仓库自己有的命令：just new、just check-skill。建新项目时连这两行一起去掉
+import? 'skill/bedrock.just'

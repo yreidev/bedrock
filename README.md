@@ -11,7 +11,16 @@
 
 ## 现状
 
-规范和骨架已经能用：核心（示例业务“备忘”）、SQLite 存储、命令行（含 `serve`），以及在 Linux 桌面和安卓上能新建、列出、删除备忘的 Flutter 应用。提交钩子和 CI 也已写好。进度见[计划](docs/PLAN.md)。全部搭好后，用 `just new <名字> <目录>` 从它建新项目。
+规范和骨架已经能用：核心（示例业务“备忘”）、SQLite 存储、命令行（含 `serve`），以及在 Linux 桌面和安卓上能新建、列出、删除备忘的 Flutter 应用；提交钩子、CI、建新项目的命令和全局技能也已写好。进度见[计划](docs/PLAN.md)。
+
+## 建新项目
+
+```sh
+just new notes ~/github/notes   # 名字只许一个小写单词
+cd ~/github/notes && just deps && just ci
+```
+
+新项目带着完整的骨架和示例业务，当场能过 `just ci`；规范不复制过去，`AGENTS.md` 里记着建自 bedrock 的哪个提交。在会话里让代理建项目、加业务、加操作、加端，走全局技能 `bedrock`：技能就是这个仓库的 `skill/`，把 `~/.claude/skills/bedrock` 链接到它。
 
 ## 试一下
 
@@ -37,6 +46,7 @@ just ci                                     # 检查、测试、桌面上的集�
 - [架构](docs/ARCHITECTURE.md)
 - [开发](docs/development.md)：环境、命令、调试
 - [发版](docs/release.md)：发版步骤、安卓签名、回滚
+- [全局技能](skill/SKILL.md)：建项目、加业务、加操作、加端、跟上新规矩
 - [计划和进度](docs/PLAN.md)
 
 许可证：[MIT](LICENSE-MIT) 或 [Apache-2.0](LICENSE-APACHE)，任选其一。

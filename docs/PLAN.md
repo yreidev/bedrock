@@ -30,6 +30,10 @@ bedrock 是以后所有项目的地基：规范文档、一个能直接编译运
 | 16 | Flutter 的组件库 | shadcn_ui，和 HeroUI 同一类简洁风格。HeroUI 没有官方的 Flutter 版（只有网页和 React Native），pub.dev 上的个人移植几乎没人用；Material 也能调成那个样子，但想要现成就接近的。选它时是 0.57.3（2026-10-22 发布，MIT），还没到 1.0、小版本常有不兼容改动，所以版本锁死，升级单独提交并看它的更新记录 | 2026-10-24 |
 | 17 | Dart 类型怎么生成 | 自己写一个小生成器：`apps/app` 里的 Dart 脚本读 `schema/ops.json`，用 dart-lang 官方的 code_builder 拼代码、dart_style 格式化，`just gen` 调它（2026-10-24 改为生成器只拼代码、由 `just gen` 接着跑 SDK 自带的 `dart format`，原因：dart_style 带着整个 analyzer，每次 `dart run` 现场编译生成器要多花二十秒，排版结果一样）。生成每个输入输出的类（字段转驼峰、时间转 `DateTime`、可选字段没值就不写）、每个操作的错误码、一张带类型的操作表；只认核心会导出的那几种 Schema 写法，遇到别的直接报错。实测 quicktype 时它把 `NoteView` 起名成 `All`、空结构变成 `Map`、可选字段写出 `null`，也不生成操作表 | 2026-10-24 |
 | 18 | Dart 的 lint | flutter_lints（`flutter create` 自带的官方规则）零警告，另开分析器的严格模式（`strict-casts`、`strict-inference`、`strict-raw-types`，相当于 TS 的 strict），再加几条真会出错的规则（漏写 `await`、对 `dynamic` 调方法）。和 Rust 那边“默认规则零警告再加几条”同一档；very_good_analysis 太严，写应用时要关掉一批 | 2026-10-24 |
+| 19 | 全局技能放哪 | 技能的文件放在 bedrock 仓库的 `skill/`，`~/.claude/skills/bedrock` 是指向它的符号链接。技能和规范、骨架一起改、一起提交，bedrock 自己的 CI 查技能里提到的文件还在不在；换电脑时克隆仓库再链接一次 | 2026-10-24 |
+| 20 | 新项目的名字 | 只许一个小写单词：小写字母开头，只有字母和数字（`crook`、`tillbox`、`relaypocket`）。`just new` 把 `bedrock`、`Bedrock`、`BEDROCK` 直接换成新名字的三种写法，crate 名、Rust 标识符、Dart 包名、安卓 applicationId、类型名、环境变量都合法；带连字符的名字要按位置换成好几种写法，骨架里写错一处新项目就编不过 | 2026-10-24 |
+| 21 | 新项目带不带规范 | 不带。规范只在 bedrock 一处，新项目的 `AGENTS.md` 写明按 bedrock 的规矩，并记下建项目时 bedrock 的提交；本机会话经全局技能读规范，别人看 GitHub 上那个提交的 `docs/conventions/`。bedrock 的规矩改了以后，技能对比这个提交列出项目要跟着改的地方 | 2026-10-24 |
+| 22 | 新项目里的示例业务和端 | 全都留着：`just new` 建出来就是完整骨架（命令行、Flutter 应用、示例业务“备忘”），当场能过 `just ci`。加第一块业务时照着备忘写，写完删掉备忘；不要某个端（比如只要命令行）时按技能里的步骤删掉 | 2026-10-24 |
 
 ## 顺带定下的小事
 
@@ -89,6 +93,14 @@ B5 定下的（2026-10-24）：
 - 安卓签名：`android/key.properties` 在就用正式密钥库，不在就用调试密钥；CI 从仓库的四个密钥写出这个文件。ffi crate 的 `rust-toolchain.toml` 补上 macOS 两种 CPU 和 Windows。
 - 工作流改完用 actionlint 查一遍。
 
+B6 定下的（2026-10-24）：
+
+- `just new` 写在 `skill/new.sh`，命令在 `skill/bedrock.just`，根 `justfile` 末尾用 `import?` 引入；新项目里去掉这两行，也不带 `skill/`。它按 bedrock 工作区里的样子复制（包括没提交的改动，AGENTS.md 里注明），不提交、不装 cargo 工具。**坑**：名字长短变了，rustfmt 的换行和 `use` 的顺序、Dart 生成文件的换行都会跟着变，原样替换过不了格式检查，所以换完名字要装 Flutter、拉依赖、`just fmt`。
+- 新项目的 `README.md`、`AGENTS.md`、`CLAUDE.md`、`CHANGELOG.md`、`docs/PLAN.md` 从模板写；`docs/ARCHITECTURE.md`、`docs/development.md`、`docs/release.md` 和各 crate 的 `README.md` 用骨架的，换好名字。AGENTS 模板改成和骨架一样的命令表，开头记着 bedrock 的提交和那个提交的规范网址。
+- 版本号从 0.1.0 起：bedrock 自己的版本不是 0.1.0 时，`Cargo.toml`、`pubspec.yaml`、操作清单、生成的 Dart 和 `Cargo.lock` 里工作区自己的 crate 一起改回去。
+- 技能分成入口 `skill/SKILL.md` 和 `skill/references/` 下五篇：建项目、加业务（含删备忘）、加操作、加端（含加平台、去掉应用）、跟上新规矩。技能只写步骤和去哪看，规矩留在规范里。`just check-skill` 查技能里提到的路径都在（`<项目>` 按 bedrock、`<业务>` 按 note 找）。
+- bedrock 多一个工作流 `bedrock.yml`：查技能，用 `just new` 建一个项目，在里面跑 `just ci`。
+
 ## 开发步骤
 
 每步做完都要 `just ci` 通过，停下来确认后再做下一步。
@@ -100,5 +112,5 @@ B5 定下的（2026-10-24）：
 | B3 调整 Rust 骨架，实测 Flutter 桌面（2026-10-24 完成：`bedrock serve` 并进命令行，`apps/server` 和 UniFFI 出口删掉，26 个测试，`just ci` 通过；Flutter 3.47.8 的最小应用在 Linux 桌面上试过中文输入、窗口、托盘） | 服务并进命令行：HTTP 路由挪到 `crates/bedrock-http`，命令行加 `bedrock serve`，去掉 `apps/server` 和托管网页；删掉写了一半的前端（pnpm 工作区、`packages/`、`apps/web`）；规范里网页、TS、Tauri 的部分改掉。装 Flutter（版本固定在仓库里），在本机 Linux 桌面跑一个最小应用，实测中文输入法、窗口、托盘 | `just ci` 通过；`bedrock serve` 能增删查备忘；在 Linux 桌面上试过 Flutter 应用里的中文输入，没问题 |
 | B4 Flutter 应用（2026-10-24 完成：逐题定了第 14–18 题；`apps/app` 在 Linux 桌面和安卓真机（无线 ADB）上都能新建、列出、删除备忘，安卓正式包只编 arm64-v8a 时 23.5 MB；`just ci` 通过，Rust 27 个测试、Dart 9 个单元测试、桌面集成测试 2 条，手机上集成测试通过；改了 Rust 类型不 `just gen`，清单和 Dart 两段检查都会失败；iOS、macOS、Windows 只生成了工程，还没构建） | 先逐题定状态管理、路由、组件库、Dart 类型生成、lint 规则集。`apps/app`：桌面（Linux 本机构建）、安卓（本机构建 APK）、iOS 工程（在 macOS 上构建，先只生成工程）；`crates/bedrock-ffi` 换成 flutter_rust_bridge（`open` 加 `call`）；Dart 类型从 `schema/ops.json` 生成；两种传输：本机直接调核心、经网络连 `bedrock serve` | 桌面和安卓都能增删查备忘；改了 Rust 类型不重新生成时检查失败；集成测试通过 |
 | B5 提交钩子和 CI（2026-10-24 完成：钩子在临时副本里试过，正常的提交能过，中文第一行、假的 GitHub 令牌、没排版的 Rust 文件都被拦下；两个工作流过了 actionlint；推到 GitHub 后 CI 通过，一次约 10 分钟，Rust 27 个测试和桌面集成测试 2 条都跑了；发版工作流还没实际跑过） | lefthook、提交说明检查、gitleaks；GitHub Actions 跑 `just ci`，发版时打包三个桌面平台和安卓 | 推送后 CI 通过 |
-| B6 全局技能 | `~/.claude/skills/bedrock/`：建项目、加业务、加操作、加端时怎么做；全局 CLAUDE.md 加一行指向它 | 新会话里让代理建一个项目，按规矩建出来 |
+| B6 全局技能（2026-10-24 完成：逐题定了第 19–22 题；写了 `just new`、技能和 `bedrock.yml`；本机 `just new demo` 建出的项目从头跑 `just ci` 通过，Rust 27 个测试、Dart 9 个、桌面集成测试 2 条） | `~/.claude/skills/bedrock/`：建项目、加业务、加操作、加端时怎么做；全局 CLAUDE.md 加一行指向它 | 新会话里让代理建一个项目，按规矩建出来（2026-10-24 改：用户定了不在新会话里验收，以 `just new` 建出的项目在本机和 CI 里都过 `just ci` 为准） |
 | B7 迁移第一个项目 | 按第 12 题重组，同时做 Flutter 客户端，删掉网页端 | 原有的 Rust 测试全部通过；手机上的 Flutter 应用能做到网页端现在能做的事 |

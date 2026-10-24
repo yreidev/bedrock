@@ -1,0 +1,78 @@
+# 只有 bedrock 仓库有这个工作流，just new 不带过去。
+# 每次推送：查技能里提到的文件还在，再用 just new 建一个项目，在里面跑 just ci，保证骨架改了以后建出来的项目照样能过。
+name: 新项目
+
+on:
+  push:
+    branches: ["**"]
+  workflow_dispatch:
+
+concurrency:
+  group: new-project-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  new-project:
+    name: 建项目并跑 just ci
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      # just new 不许把新项目建在 bedrock 里面，所以 bedrock 检出到子目录，新项目建在它旁边
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: bedrock
+
+      - name: 装系统依赖
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev libstdc++-12-dev xvfb
+
+      - uses: taiki-e/install-action@1e29709c0ec63babbe8f266397a465f29a825f91 # v2.87.31
+        with:
+          tool: just@1.59.0
+
+      - name: 查技能
+        working-directory: bedrock
+        run: just check-skill
+
+      - name: 读工具版本
+        id: tools
+        working-directory: bedrock
+        run: |
+          echo "list=$(just ci-tools)" >> "$GITHUB_OUTPUT"
+          echo "fvm=$(just --evaluate fvm)" >> "$GITHUB_OUTPUT"
+
+      - uses: taiki-e/install-action@1e29709c0ec63babbe8f266397a465f29a825f91 # v2.87.31
+        with:
+          tool: ${{ steps.tools.outputs.list }}
+
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/fvm/versions
+            ~/.pub-cache
+          key: flutter-${{ runner.os }}-${{ hashFiles('bedrock/.fvmrc', 'bedrock/apps/app/pubspec.lock') }}
+          restore-keys: flutter-${{ runner.os }}-
+
+      - name: 装 fvm
+        run: |
+          curl -fsSL https://fvm.app/install.sh | bash -s -- "${{ steps.tools.outputs.fvm }}"
+          echo "$HOME/fvm/bin" >> "$GITHUB_PATH"
+
+      # just new 换完名字会装 Flutter、拉依赖、重新排版
+      - name: 建项目
+        working-directory: bedrock
+        run: just new demo ../demo
+
+      # 要等新项目建好再恢复：先恢复的话 demo/target 已经在了，just new 会因为目录不空拒绝
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          workspaces: demo -> target
+          cache-directories: demo/apps/app/.dart_tool/hooks_runner/shared
+
+      - name: just ci
+        working-directory: demo
+        run: xvfb-run -a just ci
