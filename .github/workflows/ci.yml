@@ -1,0 +1,66 @@
+# 每次推送：在 Linux 上跑 just ci，和本机提交前跑的一样。
+# 这里只装环境，检查和测试一律走 just 命令，不在工作流里另写一套。
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Flutter 的 Linux 桌面构建要的包（见 Flutter 官方的 Linux 安装文档），xvfb 给集成测试开虚拟屏幕
+      - name: 装系统依赖
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev libstdc++-12-dev xvfb
+
+      # just 自己的版本只写在这里，其余工具的版本都从 justfile 读
+      - uses: taiki-e/install-action@1e29709c0ec63babbe8f266397a465f29a825f91 # v2.87.31
+        with:
+          tool: just@1.59.0
+
+      - name: 读工具版本
+        id: tools
+        run: |
+          echo "list=$(just ci-tools)" >> "$GITHUB_OUTPUT"
+          echo "fvm=$(just --evaluate fvm)" >> "$GITHUB_OUTPUT"
+
+      - uses: taiki-e/install-action@1e29709c0ec63babbe8f266397a465f29a825f91 # v2.87.31
+        with:
+          tool: ${{ steps.tools.outputs.list }}
+
+      # Rust 工具链按 rust-toolchain.toml 自动装；应用构建时钩子编的 Rust 在 .dart_tool 里，一起缓存
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          cache-directories: apps/app/.dart_tool/hooks_runner/shared
+
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/fvm/versions
+            ~/.pub-cache
+          key: flutter-${{ runner.os }}-${{ hashFiles('.fvmrc', 'apps/app/pubspec.lock') }}
+          restore-keys: flutter-${{ runner.os }}-
+
+      - name: 装 fvm 和 Flutter
+        run: |
+          curl -fsSL https://fvm.app/install.sh | bash -s -- "${{ steps.tools.outputs.fvm }}"
+          export PATH="$HOME/fvm/bin:$PATH"
+          echo "$HOME/fvm/bin" >> "$GITHUB_PATH"
+          just deps-app
+
+      - name: just ci
+        run: xvfb-run -a just ci

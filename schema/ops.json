@@ -1,0 +1,122 @@
+{
+  "version": "0.1.0",
+  "operations": [
+    {
+      "name": "note.create",
+      "kind": "action",
+      "input": {
+        "$ref": "#/$defs/CreateNoteInput"
+      },
+      "output": {
+        "$ref": "#/$defs/NoteView"
+      },
+      "errors": [
+        "empty_title",
+        "title_too_long",
+        "body_too_long",
+        "internal"
+      ]
+    },
+    {
+      "name": "note.list",
+      "kind": "query",
+      "input": {
+        "$ref": "#/$defs/ListNotesInput"
+      },
+      "output": {
+        "$ref": "#/$defs/NoteList"
+      },
+      "errors": [
+        "internal"
+      ]
+    },
+    {
+      "name": "note.delete",
+      "kind": "action",
+      "input": {
+        "$ref": "#/$defs/DeleteNoteInput"
+      },
+      "output": {
+        "$ref": "#/$defs/DeleteNoteOutput"
+      },
+      "errors": [
+        "not_found",
+        "internal"
+      ]
+    }
+  ],
+  "$defs": {
+    "CreateNoteInput": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "去掉首尾空白后 1 到 200 个字"
+        },
+        "body": {
+          "type": "string",
+          "description": "最多 10000 个字，可以不写"
+        }
+      },
+      "required": [
+        "title"
+      ]
+    },
+    "NoteView": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "body": {
+          "type": "string",
+          "description": "没有正文时不出现"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "created_at"
+      ],
+      "description": "一条备忘，给调用方看的样子。"
+    },
+    "ListNotesInput": {
+      "type": "object"
+    },
+    "NoteList": {
+      "type": "object",
+      "properties": {
+        "notes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/NoteView"
+          }
+        }
+      },
+      "required": [
+        "notes"
+      ]
+    },
+    "DeleteNoteInput": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
+    "DeleteNoteOutput": {
+      "type": "object"
+    }
+  }
+}

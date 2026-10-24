@@ -1,0 +1,4 @@
+# 改这里时同步改 crates/bedrock-core/clippy.toml：clippy 只读离 crate 最近的那份
+allow-dbg-in-tests = true
+allow-expect-in-tests = true
+allow-unwrap-in-tests = true

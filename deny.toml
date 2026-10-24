@@ -1,0 +1,36 @@
+# 全仓库的依赖审查：`just check` 里的 cargo deny check。
+# 核心另有自己的禁用名单：crates/bedrock-core/deny.toml。
+
+[graph]
+all-features = true
+
+[advisories]
+# 已知漏洞、不再维护、被撤回的版本都报错；确认无害要放过时，写进 ignore 并注明原因
+ignore = [
+]
+
+[licenses]
+# 现有依赖用到的宽松许可证。新依赖带来新的许可证时，确认和项目合得来再加
+allow = [
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-3-Clause",
+    "MIT",
+    "MPL-2.0",
+    "Unicode-3.0",
+    "Zlib",
+]
+confidence-threshold = 0.9
+
+[licenses.private]
+# 工作区自己的 crate 不发布，不查许可证
+ignore = true
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+allow-wildcard-paths = true
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"

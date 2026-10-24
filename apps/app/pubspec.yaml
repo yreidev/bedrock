@@ -1,0 +1,35 @@
+name: bedrock
+description: "bedrock 的客户端应用：桌面和手机共用"
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.13.7
+
+dependencies:
+  # Flutter 自带的 Cupertino 控件引用了这套图标，不带的话每次构建都报缺字体
+  cupertino_icons: ^1.0.9
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  flutter_riverpod: ^3.4.3
+  flutter_rust_bridge: 2.13.0
+  flutter_rust_bridge_hooks: 2.13.0
+  go_router: ^18.1.1
+  http: ^1.6.0
+  path_provider: ^2.1.6
+  xdg_directories: ^1.1.0
+  # 还没到 1.0，小版本常有不兼容改动：版本写死，升级单独提交
+  shadcn_ui: 0.57.3
+
+dev_dependencies:
+  code_builder: ^4.13.0
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true

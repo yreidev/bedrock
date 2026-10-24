@@ -1,0 +1,49 @@
+[workspace]
+resolver = "3"
+members = ["apps/cli", "crates/*"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.99"
+publish = false
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/yreidev/bedrock"
+
+[workspace.dependencies]
+bedrock-core = { path = "crates/bedrock-core" }
+bedrock-http = { path = "crates/bedrock-http" }
+bedrock-local = { path = "crates/bedrock-local" }
+bedrock-store-sqlite = { path = "crates/bedrock-store-sqlite" }
+
+anyhow = "1.0.104"
+axum = "0.8.9"
+clap = { version = "4.6.7", features = ["derive", "env"] }
+dirs = "7.0.0"
+flutter_rust_bridge = "=2.13.0"
+jiff = { version = "0.2.38", default-features = false, features = ["std", "serde"] }
+reqwest = { version = "0.13.5", default-features = false, features = ["json"] }
+schemars = { version = "1.2.3", features = ["jiff02"] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = { version = "1.0.154", features = ["preserve_order"] }
+sqlx = { version = "0.9.0", default-features = false, features = ["macros", "migrate", "runtime-tokio", "sqlite-bundled"] }
+tempfile = "3.27.0"
+thiserror = "2.0.21"
+tokio = { version = "1.54.1", features = ["macros", "rt-multi-thread"] }
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
+uuid = { version = "1.29.0", features = ["v7"] }
+
+[workspace.lints.rust]
+unsafe_code = "deny"
+
+[workspace.lints.clippy]
+dbg_macro = "warn"
+expect_used = "warn"
+todo = "warn"
+unimplemented = "warn"
+unwrap_used = "warn"
+
+[profile.release]
+lto = "thin"
+strip = true

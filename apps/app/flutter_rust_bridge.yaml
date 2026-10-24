@@ -1,0 +1,6 @@
+# flutter_rust_bridge 的生成配置：just gen 里调 flutter_rust_bridge_codegen generate。
+rust_input: crate::api
+rust_root: ../../crates/bedrock-ffi/
+dart_output: lib/ffi/
+dart_entrypoint_class_name: RustLib
+web: false

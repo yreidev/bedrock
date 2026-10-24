@@ -1,0 +1,33 @@
+[package]
+name = "bedrock-cli"
+description = "bedrock 的命令行，也能开服务给别的设备用"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "bedrock"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = { workspace = true }
+bedrock-core = { workspace = true }
+bedrock-http = { workspace = true }
+bedrock-local = { workspace = true }
+clap = { workspace = true }
+jiff = { workspace = true, features = ["tz-system", "tzdb-zoneinfo", "tzdb-bundle-platform"] }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true, features = ["net", "signal"] }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }
+tempfile = { workspace = true }
+
+[lints]
+workspace = true

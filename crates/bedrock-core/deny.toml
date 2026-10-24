@@ -1,0 +1,39 @@
+# 核心的禁用依赖。`just check` 单独对核心跑：
+# cargo deny --manifest-path crates/bedrock-core/Cargo.toml check --config crates/bedrock-core/deny.toml bans
+
+[graph]
+# 测试可以用异步运行时
+exclude-dev = true
+
+[bans]
+# 多版本由根目录的检查管
+multiple-versions = "allow"
+deny = [
+    # 数据库客户端：存储走端口，由适配器实现
+    { crate = "sqlx", reason = "核心不碰数据库，写成端口" },
+    { crate = "rusqlite", reason = "核心不碰数据库，写成端口" },
+    { crate = "diesel", reason = "核心不碰数据库，写成端口" },
+    { crate = "sea-orm", reason = "核心不碰数据库，写成端口" },
+    { crate = "tokio-postgres", reason = "核心不碰数据库，写成端口" },
+    { crate = "redis", reason = "核心不碰数据库，写成端口" },
+    # HTTP 和网络
+    { crate = "hyper", reason = "核心不碰网络，写成端口" },
+    { crate = "reqwest", reason = "核心不碰网络，写成端口" },
+    { crate = "ureq", reason = "核心不碰网络，写成端口" },
+    { crate = "tokio-tungstenite", reason = "核心不碰网络，写成端口" },
+    # Web 框架
+    { crate = "axum", reason = "HTTP 只在 bedrock-http" },
+    { crate = "actix-web", reason = "HTTP 只在 bedrock-http" },
+    { crate = "warp", reason = "HTTP 只在 bedrock-http" },
+    { crate = "rocket", reason = "HTTP 只在 bedrock-http" },
+    { crate = "poem", reason = "HTTP 只在 bedrock-http" },
+    # 异步运行时：核心只写 Future，由各端选运行时
+    { crate = "tokio", reason = "运行时由各端选" },
+    { crate = "async-std", reason = "运行时由各端选" },
+    { crate = "smol", reason = "运行时由各端选" },
+    # 界面和平台框架
+    { crate = "flutter_rust_bridge", reason = "给 Dart 的接口只在 bedrock-ffi" },
+    # 什么错误都装的库：核心用有类型的错误
+    { crate = "anyhow", reason = "核心用有类型的错误" },
+    { crate = "eyre", reason = "核心用有类型的错误" },
+]

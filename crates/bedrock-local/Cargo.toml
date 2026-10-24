@@ -1,0 +1,25 @@
+[package]
+name = "bedrock-local"
+description = "在本机跑核心：SQLite 存储、系统时间、随机编号"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+bedrock-core = { workspace = true }
+bedrock-store-sqlite = { workspace = true }
+dirs = { workspace = true }
+jiff = { workspace = true }
+thiserror = { workspace = true }
+uuid = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }
+tempfile = { workspace = true }
+tokio = { workspace = true }
+
+[lints]
+workspace = true

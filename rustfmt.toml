@@ -1,0 +1,3 @@
+style_edition = "2024"
+# 提交钩子直接调 rustfmt 查单个文件，不经过 cargo，要在这里写明版次
+edition = "2024"

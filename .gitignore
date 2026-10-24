@@ -1,0 +1,8 @@
+/target
+.fvm/
+*.db
+*.db-shm
+*.db-wal
+.env
+lefthook-local.yml
+/dist

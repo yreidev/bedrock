@@ -1,0 +1,19 @@
+# Flutter 的构建钩子在这个目录里调 rustup，只认这里的文件：版本要和仓库根目录的一样，
+# targets 列出要编的平台，没列的平台构建时直接报错。iOS 等真要构建时再加进来。
+[toolchain]
+channel = "1.99.1"
+components = ["rustfmt", "clippy"]
+profile = "minimal"
+targets = [
+    # Linux 桌面
+    "x86_64-unknown-linux-gnu",
+    # 安卓
+    "aarch64-linux-android",
+    "armv7-linux-androideabi",
+    "x86_64-linux-android",
+    # macOS 桌面（发行版同时编两种 CPU）
+    "aarch64-apple-darwin",
+    "x86_64-apple-darwin",
+    # Windows 桌面
+    "x86_64-pc-windows-msvc",
+]

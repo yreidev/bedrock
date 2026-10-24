@@ -1,0 +1,131 @@
+# 打 v 开头的标签时：在三个桌面系统上构建应用和命令行，在 Linux 上构建安卓包，发到 GitHub Releases。
+# 手动运行时只构建、不发 Release，产物留在这次运行的附件里，用来试构建。步骤见 docs/release.md。
+name: 发版
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: 构建 ${{ matrix.target }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { target: linux, os: ubuntu-24.04 }
+          - { target: macos, os: macos-15 }
+          - { target: windows, os: windows-2025 }
+          - { target: apk, os: ubuntu-24.04 }
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: 定版本号
+        run: |
+          if [[ $GITHUB_REF == refs/tags/v* ]]; then v=${GITHUB_REF_NAME#v}; else v=dev-${GITHUB_SHA::7}; fi
+          echo "VERSION=$v" >> "$GITHUB_ENV"
+
+      - name: 装系统依赖
+        if: matrix.target == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev libstdc++-12-dev
+
+      - uses: taiki-e/install-action@1e29709c0ec63babbe8f266397a465f29a825f91 # v2.87.31
+        with:
+          tool: just@1.59.0
+
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          key: ${{ matrix.target }}
+          cache-directories: apps/app/.dart_tool/hooks_runner/shared
+
+      - name: 装 fvm 和 Flutter
+        run: |
+          fvm_version=$(just --evaluate fvm)
+          if [[ $RUNNER_OS == Windows ]]; then
+            choco install fvm --version "$fvm_version" -y --no-progress
+          else
+            curl -fsSL https://fvm.app/install.sh | bash -s -- "$fvm_version"
+            export PATH="$HOME/fvm/bin:$PATH"
+            echo "$HOME/fvm/bin" >> "$GITHUB_PATH"
+          fi
+          just deps-app
+
+      # 安卓构建要 JDK 21，运行器自带。仓库密钥里有签名用的密钥库就写出 key.properties，没有就用调试密钥签
+      - name: 准备安卓签名
+        if: matrix.target == 'apk'
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          echo "JAVA_HOME=$JAVA_HOME_21_X64" >> "$GITHUB_ENV"
+          if [[ -z $KEYSTORE_BASE64 ]]; then
+            echo "::warning::没有配置 ANDROID_KEYSTORE_BASE64，安卓包用调试密钥签名，装不上用别的密钥签过的旧版本"
+            exit 0
+          fi
+          echo "$KEYSTORE_BASE64" | base64 -d > apps/app/android/app/release.jks
+          {
+            echo "storeFile=release.jks"
+            echo "storePassword=$KEYSTORE_PASSWORD"
+            echo "keyAlias=$KEY_ALIAS"
+            echo "keyPassword=$KEY_PASSWORD"
+          } > apps/app/android/key.properties
+
+      - name: 构建命令行
+        if: matrix.target != 'apk'
+        run: just build
+
+      - name: 构建应用
+        run: just build-app ${{ matrix.target }}
+
+      - name: 打包
+        run: just package ${{ matrix.target }} "$VERSION"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dist-${{ matrix.target }}
+          path: dist/*
+          if-no-files-found: error
+
+  release:
+    name: 发 Release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: dist
+          merge-multiple: true
+
+      - uses: taiki-e/install-action@1e29709c0ec63babbe8f266397a465f29a825f91 # v2.87.31
+        with:
+          tool: just@1.59.0
+
+      - name: 发 Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=${GITHUB_REF_NAME#v}
+          just release-notes "$version" > notes.md
+          if [[ ! -s notes.md ]]; then
+            echo "::error::CHANGELOG.md 里没有 $version 的说明"
+            exit 1
+          fi
+          gh release create "$GITHUB_REF_NAME" dist/* --title "$GITHUB_REF_NAME" --notes-file notes.md

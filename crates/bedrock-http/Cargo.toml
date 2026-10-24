@@ -1,0 +1,23 @@
+[package]
+name = "bedrock-http"
+description = "把核心的操作面经 HTTP 开给别的设备"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+axum = { workspace = true }
+bedrock-core = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true, features = ["net"] }
+
+[dev-dependencies]
+bedrock-local = { workspace = true }
+reqwest = { workspace = true }
+tempfile = { workspace = true }
+
+[lints]
+workspace = true

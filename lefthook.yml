@@ -1,0 +1,25 @@
+# 提交钩子，`just deps` 装上。只检查这次暂存的文件、不改文件，查全部用 `just check`。
+# 本机自己的检查（比如一份私有关键词清单）写在 lefthook-local.yml，它不入库。
+
+pre-commit:
+  parallel: true
+  jobs:
+    - name: Rust 格式
+      glob: "*.rs"
+      run: rustfmt --check {staged_files}
+
+    - name: Dart 格式
+      root: apps/app/
+      glob: "*.dart"
+      run: fvm dart format --output=none --set-exit-if-changed {staged_files}
+
+    - name: 拼写
+      run: typos --force-exclude {staged_files}
+
+    - name: 密钥
+      run: gitleaks git --pre-commit --staged --redact --no-banner
+
+commit-msg:
+  jobs:
+    - name: 提交说明
+      run: just check-commit-msg {1}
